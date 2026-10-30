@@ -30,18 +30,34 @@ app.get('/api/health', (_req, res) => {
 // API Router
 app.use('/api', apiRouter);
 
-// Serve static frontend if client dist exists
+// Serve static frontend if client dist exists with an index.html
 const possibleDistPaths = [
   path.resolve(process.cwd(), 'client/dist'),
   path.resolve(process.cwd(), '../client/dist'),
   path.resolve(process.cwd(), 'dist'),
 ];
-const clientDist = possibleDistPaths.find((p) => fs.existsSync(p));
+const clientDist = possibleDistPaths.find((p) => fs.existsSync(path.join(p, 'index.html')));
 if (clientDist) {
   console.log(`[Startup] Serving compiled client UI from: ${clientDist}`);
   app.use(express.static(clientDist));
-  app.get('*', (_req, res) => {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health') return next();
     res.sendFile(path.join(clientDist, 'index.html'));
+  });
+} else {
+  // Standalone API mode (e.g. Render backend with Vercel frontend)
+  app.get('/', (_req, res) => {
+    res.json({
+      service: 'Mobileum SafeFamily Backend API',
+      status: 'online',
+      message: 'Backend is running and ready for frontend connections.',
+      endpoints: {
+        health: '/health',
+        api: '/api',
+        subscribers: '/api/subscribers',
+        smtpStatus: '/api/smtp-status',
+      },
+    });
   });
 }
 
