@@ -9,7 +9,8 @@ import {
   SmtpStatusResponse,
 } from '../types.js';
 
-const BASE_URL = '/api';
+const API_ORIGIN = (import.meta as any).env?.VITE_API_URL || '';
+const BASE_URL = API_ORIGIN ? `${String(API_ORIGIN).replace(/\/+$/, '')}/api` : '/api';
 
 export const api = {
   // Subscribers
