@@ -1,0 +1,27 @@
+{
+  "name": "child-spam-call-alert-system",
+  "version": "1.0.0",
+  "description": "Child Spam Call Alert System - Telecom Security Demo using React, TypeScript, Express, and Excel",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "build": "npm run build:client && npm run build:server",
+    "start": "cd server && npm start"
+  },
+  "keywords": [
+    "telecom",
+    "spam-alert",
+    "child-safety",
+    "mobileum",
+    "exceljs",
+    "nodemailer"
+  ],
+  "author": "Mobileum Telecom Security Demo",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

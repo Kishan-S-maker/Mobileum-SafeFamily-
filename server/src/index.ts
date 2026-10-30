@@ -1,0 +1,71 @@
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { config } from './config.js';
+import { excelService } from './excelService.js';
+import { emailService } from './emailService.js';
+import { apiRouter } from './routes/api.js';
+
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// API Router
+app.use('/api', apiRouter);
+
+// Serve static frontend if client dist exists
+const possibleDistPaths = [
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(process.cwd(), '../client/dist'),
+  path.resolve(process.cwd(), 'dist'),
+];
+const clientDist = possibleDistPaths.find((p) => fs.existsSync(p));
+if (clientDist) {
+  console.log(`[Startup] Serving compiled client UI from: ${clientDist}`);
+  app.use(express.static(clientDist));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
+
+// Global error handler
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Server Error]', err);
+  res.status(500).json({ success: false, error: err.message || 'Internal Server Error' });
+});
+
+async function startServer() {
+  try {
+    // 1. Initialize Excel database
+    console.log('[Startup] Initializing Excel database...');
+    await excelService.initialize();
+    console.log(`[Startup] Excel database active at: ${excelService.getFilePath()}`);
+
+    // 2. Check SMTP status
+    const smtpStatus = emailService.getSmtpStatus();
+    if (smtpStatus.configured) {
+      console.log(`[Startup] SMTP is configured (${smtpStatus.host}:${smtpStatus.port}, user: ${smtpStatus.user})`);
+    } else {
+      console.log('[Startup] SMTP is not configured in .env. Simulator will run in safe demo mode (displaying "EMAIL NOT CONFIGURED").');
+    }
+
+    // 3. Listen
+    app.listen(config.port, () => {
+      console.log(`=======================================================`);
+      console.log(`🚀 SafeFamily Child Spam Alert System Backend Running!`);
+      console.log(`📡 Port: ${config.port}`);
+      console.log(`📊 Excel Workbook: ${excelService.getFilePath()}`);
+      console.log(`🌐 API Endpoint: http://localhost:${config.port}/api`);
+      console.log(`=======================================================`);
+    });
+  } catch (err) {
+    console.error('[Startup Error] Failed to start server:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
